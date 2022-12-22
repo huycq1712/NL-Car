@@ -5,8 +5,13 @@ import PIL
 from PIL import Image
 import torch
 from torch.utils.data import Dataset, DataLoader
-
+import sys
+import numpy as np
+sys.path.append("/mnt/data/user_data/huycq/NL-Car")
+print(sys.path)
 import re
+import cv2
+from utils.extract_nl import prepare_text, return_a_list_of_NPs
 
 
 class NLCityFlowDataset(Dataset):
@@ -37,27 +42,29 @@ class NLCityFlowDataset(Dataset):
         index = self.all_indexs[index]
         track = self.list_of_tracks[index]
         #flag = self.flip_tags[index]
-        
         nl_idx = int(random.uniform(0, len(track['nl'])))
-        nl_view_idx = int(random.uniform(0, len(track['nl_other'])))
+        nl_view_idx = int(random.uniform(0, len(track['nl_other_views'])))
         frame_idx = int(random.uniform(0, len(track['frames'])))
-        
+    
         nl = track['nl'][nl_idx]
-        if len(track['nl_other']) == 0:
-            nl_view = track['nl_other'][-1]
+        if len(track['nl_other_views']) == 0:
+            nl_view = track['nl'][-1]
         else:
-            nl_view = track['nl_other'][nl_view_idx]
+            nl_view = track['nl_other_views'][nl_view_idx]
             
-        car_noun = 'this is a' + extract_np(nl)
+        car_noun = 'This is ' + extract_np(nl).lower() + '.'
         
         frame = Image.open(os.path.join(self.frame_path, track['frames'][frame_idx]))
         motion = Image.open(os.path.join(self.motion_path, track['frames'][frame_idx]))
-        bbox = track['bbox'][frame_idx]
-        bbox = bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]
-        crop = frame.crop(bbox)
+        bbox = track['boxes'][frame_idx]
+        bbox = bbox[0], bbox[1], bbox[0] + bbox[3], bbox[1] + bbox[2]
         
-        if self.transformes:
-            crop = self.transforms(crop)
+        crop = frame.crop(bbox)
+
+        if self.transforms:
+            frame = self.transforms[0](frame)
+            motion = self.transforms[1](motion)
+            crop = self.transforms[2](crop)
         
         return {
             'index': index,
@@ -71,8 +78,23 @@ class NLCityFlowDataset(Dataset):
         
         
 def extract_np(nl):
-    return nl
+    original_nl = nl
+    nl = prepare_text(nl)
+    nl = return_a_list_of_NPs(nl)
+    if len(nl) == 0:
+        return original_nl
+    return nl[0]
             
+            
+if __name__ == '__main__':
+    NL_CITY_FLOW_DATASET = NLCityFlowDataset(json_path='/mnt/data/user_data/huycq/NL-Car/data/AIC22_Track2_NL_Retrieval/train_tracks.json',
+                                             frame_path='/mnt/data/user_data/huycq/NL-Car/data/frames',
+                                             motion_path='/mnt/data/user_data/huycq/NL-Car/data/frames',
+                                             transforms=None,
+                                             is_training=False)
+    
+    print(len(NL_CITY_FLOW_DATASET))
+    print(NL_CITY_FLOW_DATASET[100])
         
         
         
