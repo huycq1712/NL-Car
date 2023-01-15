@@ -54,8 +54,8 @@ class NLCityFlowDataset(Dataset):
             
         car_noun = 'This is ' + extract_np(nl).lower() + '.'
         
-        frame = Image.open(os.path.join(self.frame_path, track['frames'][frame_idx]))
-        motion = Image.open(os.path.join(self.motion_path, track['frames'][frame_idx]))
+        frame = Image.open(os.path.join(self.frame_path, track['frames'][frame_idx][2:]))
+        motion = Image.open(os.path.join(self.motion_path, track['frames'][frame_idx][2:]))
         bbox = track['boxes'][frame_idx]
         bbox = bbox[0], bbox[1], bbox[0] + bbox[3], bbox[1] + bbox[2]
         
@@ -87,9 +87,9 @@ def extract_np(nl):
             
             
 if __name__ == '__main__':
-    NL_CITY_FLOW_DATASET = NLCityFlowDataset(json_path='/mnt/data/user_data/huycq/NL-Car/data/AIC22_Track2_NL_Retrieval/train_tracks.json',
-                                             frame_path='/mnt/data/user_data/huycq/NL-Car/data/frames',
-                                             motion_path='/mnt/data/user_data/huycq/NL-Car/data/frames',
+    NL_CITY_FLOW_DATASET = NLCityFlowDataset(json_path='/mnt/data/user_data/huycq/datasets/train_tracks.json',
+                                             frame_path='/mnt/data/user_data/huycq/datasets/images',
+                                             motion_path='/mnt/data/user_data/huycq/datasets/images',
                                              transforms=None,
                                              is_training=False)
     
